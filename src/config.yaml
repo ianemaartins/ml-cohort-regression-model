@@ -1,0 +1,10 @@
+datasets:
+  sim:
+    path: "./data/SIM-DO_1990_2022_CONSOLIDADO.parquet"
+    label: "Óbitos (SIM)"
+  sinasc:
+    path: "./data/SINASC_1990_2022_CONSOLIDADO.parquet"
+    label: "Nascimentos (SINASC)"
+
+settings:
+  engine: "pyarrow"

@@ -6,5 +6,6 @@ O presente repositório foi destinado para o desenvolvimento e documentação de
 
 - Instalar ambiente virtual
 - Instalar bibliotecas:  jax, jaxlib, xarray, tensorly, microdatasus, sidrapy
+- Coletar dados (etapa realizada em R devido a existência da biblioteca microdatasus)
 
 

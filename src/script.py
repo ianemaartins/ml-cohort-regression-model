@@ -3,28 +3,19 @@ import yaml
 
 def load_config(arquivo_config: str = "src/config.yaml") -> dict:
     """Carrega as configurações do projeto a partir de um arquivo YAML.
-
     Args:
         arquivo_config (str): Caminho para o arquivo de configuração. 
             Padrão é "config.yaml".
-
     Returns:
         dict: Dicionário contendo as configurações de datasets e parâmetros globais.
-
     """
     with open(arquivo_config, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 def load_datasets(config: dict) -> dict[str, pd.DataFrame]:
     """Lê os arquivos Parquet consolidados e os armazena em um dicionário de DataFrames.
-
-    Esta função percorre os datasets definidos no arquivo de configuração,
-    tenta realizar a leitura utilizando o motor (engine) especificado e
-    centraliza o tratamento de erros de I/O.
-
     Args:
         config (dict): Dicionário de configuração carregado via `load_config`.
-
     Returns:
         Dict[str, pd.DataFrame]: Um dicionário onde as chaves são os nomes curtos 
             do dataset ('sim', 'sinasc') e os valores são os respectivos DataFrames do Pandas.

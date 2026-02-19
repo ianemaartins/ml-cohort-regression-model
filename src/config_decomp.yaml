@@ -1,0 +1,93 @@
+# Configuração do Sistema Federativo "Tríade-Delta"
+# Inspirado na dinâmica demográfica brasileira
+
+
+#----- PARÂMETROS DO CENÁRIO SINTÉTICO
+
+geografia:
+  cores: ["A", "B", "C"]
+  todos_estados: ["A", "A1", "A2", "A3", "B", "B1", "B2", "B3", "C", "C1", "C2", "C3"]
+  sistemas:
+    G_A:
+      core: "A"
+      periferias: ["A1", "A2", "A3"]
+      referencia_real: "São Paulo"
+    G_B:
+      core: "B"
+      periferias: ["B1", "B2", "B3"]
+      referencia_real: "Rio Grande do Sul"
+    G_C:
+      core: "C"
+      periferias: ["C1", "C2", "C3"]
+      referencia_real: "Pernambuco"
+
+populacao_inicial_1990:
+  A: 34000000
+  A1: 9000000
+  A2: 15000000
+  A3: 1700000
+  B: 9000000
+  B1: 4500000
+  B2: 4000000
+  B3: 2000000
+  C: 7000000
+  C1: 3200000
+  C2: 2500000
+  C3: 2400000
+
+dimensoes_tensor:
+  idades: 91      # 0 a 90+
+  sexos: 2        # 0: Masc, 1: Fem
+  paridade: 5     # 0 a 4+ filhos
+  anos_simulacao: 33 # 1990 a 2022
+
+regras_espaciais:
+  pesos_afinidade:
+    secundario_para_core: 1.0 #força de atração principal, para os estados principais
+    intra_regional: 0.4 # movimento entre estados vizinhos de um mesmo sistema
+    retorno_core_periferia: 0.2 # movimento de saída dos estados principais para os secundários
+    inter_sistemas: 0.05 # fluxo de longa distância, entre regiões diferentes
+  taxa_global_migracao: 0.05 # % da pop se move anualmente
+  razao_sexo_nascimento: 1.05 # 105 meninos para 100 meninas
+
+perfil_idade_rogers_castro:
+  # Componente Infantil (A queda inicial)
+    intensidade_a1: 0.02
+    queda_infantil_a1: 0.1
+
+    # Componente Laboral (O pico)
+    pico_idade_mu: 25.0
+    subida_lambda: 0.3
+    queda_alpha: 0.1
+    intensidade_a2: 0.08
+
+    # Componente de Aposentadoria 
+    intensidade_a3: 0.02
+    queda_aposentadoria_a2: 0.1
+    
+    # Constante residual
+    constante_c: 0.001
+    
+
+regra_temporal:
+    # Sobrevivência (Baseada em Tabelas de Vida do IBGE)
+    probabilidade_sobrevivencia_base: 0.997 # Simplificado para o experimento
+    
+    # Fecundidade (Transição de Paridade)
+    taxa_fecundidade_pico: 0.08 # Probabilidade máxima de ter um filho (geralmente aos 25-28 anos)
+    idades_ferteis: [15, 49]
+
+    # Estrutura de Agregação
+    tipo_coorte: "simples" # O código processa ano a ano (0, 1, 2...)
+    agregacao_saida: "quinquenal" # O relatório final agrupa em 0-4, 5-9...
+
+    # Transição de Fecundidade (TFT de 6.0 para 0.8)
+    # Isso será calculado ano a ano no código
+    fecundidade_inicio: 0.22 # Aproxima TFT ~6.0
+    fecundidade_fim: 0.03    # Aproxima TFT ~0.8
+    
+    # Parametros para adicionar ruído
+    ano_choque: 2020
+    sobrevivencia_idoso_choque: 0.85 # Queda drástica (era 0.99)
+    # Choque de Migração de Retorno 2020
+    multiplicador_retorno_choque: 10.0 # Aumenta 10x o peso de retorno

@@ -1,0 +1,109 @@
+---
+title: "Simulação de dados migratórios: aplicação de um modelo de decomposição de tensores"
+author: "Iane Maria Santos Martins"
+format: 
+  pdf: 
+    fig-cap: true
+
+---
+## INTRODUÇÃO
+
+
+Educação, desenvolvimento, aumento da renda per capita nacional e melhoria da qualidade de vida são fatores diretamente influenciados pelo fenômeno da migração, impactando de forma significativa o planejamento público necessário para um desenvolvimento mais sustentável do país. No caso do Brasil, é notória e amplamente discutida a migração associada ao processo de urbanização, ocorrida principalmente nas décadas de 1950 e 1960. Ainda assim, mesmo diante da relevância desse fenômeno, persiste a dificuldade em obter dados confiáveis que representem, com exatidão, os fluxos migratórios entre as regiões brasileiras ao longo do tempo (CUNHA, 2005).
+
+Como forma de contribuir para a melhoria da estimação dos dados migratórios no Brasil, o presente artigo tem como objetivo a construção de um simulador de migração, baseado em regras que sigam a lógica estrutural da sociedade brasileira, bem como a verificação da capacidade desse simulador em recuperar a lógica migratória previamente definida. O intuito principal é fornecer subsídios metodológicos para projetos futuros que necessitem trabalhar com dados migratórios, permitindo a criação de dinâmicas populacionais mais próximas da realidade observada.
+
+Para a realização da simulação, são gerados dados referentes a um país fictício, denominado Tríade Delta, composto por 12 estados divididos em sub-regiões. A partir desse cenário hipotético, estabelece-se uma lógica explícita para a geração dos dados populacionais e migratórios. Em seguida, aplica-se uma decomposição de tensores com o objetivo de avaliar se o modelo é capaz de identificar e reproduzir a estrutura migratória previamente imposta. Ressalta-se que, na construção do modelo, são consideradas simultaneamente a dimensão espacial de estados e sub-regiões, a dimensão temporal que permite a análise em termos de séries históricas, e a estrutura etária da população migrante. Além disso, incorpora-se a diferenciação por sexo e, no caso das mulheres, a taxa de fecundidade, possibilitando avaliar como os fluxos migratórios podem interferir na dinâmica da natalidade entre regiões.
+
+## DECOMPOSIÇÃO DE TENSORES
+
+[Escrever sobre referencial teórico da decomposição de tensores e explicar a matmeática relacionada ao assunto]
+
+## SIMULAÇÃO DOS DADOS E MODELO
+
+### Dados simulados
+
+Para a validação do modelo com dados sintéticos, foi criado um país fictício denominado Tríade-Delta. A simulação teve como objetivo gerar séries populacionais no período de 1990 a 2030, inspiradas na dinâmica demográfica e migratória observada no Brasil. As condições iniciais da população foram definidas a partir da distribuição populacional de alguns estados brasileiros observada no Censo Demográfico de 1990. A partir desse ponto inicial, os dados foram projetados ao longo do tempo seguindo a lógica matemática descrita nas Seções i, ii e iii deste capítulo. Foram adicionados também ruídos para acrescentar alguma complexidade ao modelo.
+
+Além disso, as lógicas matemáticas empregadas também tiveram como inspiração a população brasileira ao longo dos anos. Ressalta-se que, embora o modelo seja inspirado nessa dinâmica demográfica, migratória e geopolítica brasileira, trata-se exclusivamente de um exercício com dados sintéticos, não havendo qualquer pretensão de reproduzir ou estimar diretamente os fluxos reais observados no Brasil.
+
+Uma vez gerados os dados populacionais e migratórios, aplicou-se a decomposição de tensores com o objetivo de avaliar se o modelo seria capaz de identificar a lógica estrutural previamente imposta ao processo de simulação. Para isso, realizou-se uma comparação entre a lógica matemática utilizada na construção dos dados sintéticos e os padrões extraídos por meio da decomposição de tensor. 
+
+
+### Regra espacial
+
+A lógica espacial adotada no simulador Tríade-Delta foi construída de forma a reproduzir, de maneira estilizada, os principais padrões da migração interna brasileira observados a partir da década de 1990. Nesse período, conforme discutido em (xxxxxx), a migração no Brasil passa a apresentar menor predominância do fluxo da zona rural para a urbana e maior relevância na migração entre centros urbanos, de curta e média distância, organizados segundo hierarquias regionais e redes urbanas.
+
+Desse modo, o território do país fictício foi dividido em 12 estados, sendo que três desses estados possuem maior influência na região, formando três sistemas regionais relativamente independentes, cada um composto por um estado principal e três estados secundários. Os estados principais representam centros de maior concentração econômica e populacional, enquanto os estados secundários funcionam como regiões intermediárias, com menor densidade populacional e forte integração funcional ao respectivo núcleo regional. 
+
+Assim, a regra espacial do modelo assume que a probabilidade de migração entre duas regiões depende fundamentalmente de sua posição relativa na hierarquia regional. Isto é, os fluxos migratórios mais intensos ocorrem entre estados secundários e seu respectivo estado principal, bem como entre estados pertencentes ao mesmo sistema regional. Migrações entre diferentes sistemas regionais são permitidas, porém com probabilidade significativamente menor, refletindo o caráter predominantemente regional da mobilidade populacional no Brasil contemporâneo.
+
+Além disso, a regra espacial incorpora a assimetria dos fluxos migratórios. Estados principais tendem a apresentar maior capacidade de atração populacional nas idades economicamente ativas, enquanto os estados secundários absorvem parte dos fluxos de retorno e de redistribuição intra-regional. Dessa forma, o modelo permite a ocorrência simultânea de saldos migratórios positivos e negativos dentro de um mesmo sistema regional, dependendo da combinação entre idade, sexo e localização espacial.
+
+Em uma perspectiva matemática, tem-se que a modelagem espacial baseia-se em um modelo chamado Modelo Gravitacional, que define como polos maiores tem maior capacidade de atração que polos menores. Neste artigo, o modelo é construído através de uma matriz de transição 12x12 onde as probabilidades de fluxo são ponderadas por uma hierarquia de sistemas regionais. A probabilidade de transição $p_{ij}$ entre uma origem $i$ e um destino $j$ é a função da afinidade estrutural entre os estados, normalizada pela propensão migratória global do sistema, garantindo a conservação da população total ao longo do tempo.
+
+Para cada par de estados $(i, j)$, atribui-se o peso $w_{ij}$ definido através de um arquivo de configuração conforme a relação hierárquica entre eles. A diagonal principal $w_{ii}$ é inicialmente zero, refletindo o fato de que não é possível migrar para o lugar onde já se está. Para transformar pesos em probabilidades reais que respeitem a taxa de migração($\delta$), aplica-se a seguinte fórmula para todos os elementos onde $i \neq j$:
+
+$$p_{ij} = \delta \cdot \left( \frac{w_{ij}}{\sum_{k \neq i} w_{ik}} \right)$$
+
+Para que a matriz siga uma função densidade de probabilidade, a probabilidade de não migrar é complementar à probabilidade de migrar e a soma das duas é igual a 1. Logo,
+
+$$p_{ii} = 1 - \sum_{j \neq i} p_{ij}$$
+
+
+### Regra de idade
+
+Fulano (xxxx) aponta que a mobilidade populacional no Brasil apresenta uma concentração marcante nas idades jovens e adultas jovens, associadas à inserção no mercado de trabalho, à continuidade dos estudos e à formação familiar.
+
+No modelo, assume-se que as probabilidades migratórias são estruturadas de forma não homogênea em relação à idade, apresentando valores baixos nas idades iniciais da infância, um aumento progressivo ao longo da adolescência e um pico concentrado nas idades jovens-adultas, aproximadamente entre 18 e 35 anos. A partir desse intervalo, observa-se uma redução gradual da migração, representando um momento de maior estabilidade da vida adulta, com constituição de família, estabelecimento de uma moradia fixa mais consolidada, carreira e vida financeira também mais estáveis.
+
+Para idades mais avançadas, o modelo reflete a ocorrência de migração de retorno, caracterizada por fluxos menos intensos, porém não nulos, especialmente em direção aos estados de origem. Esse componente busca reproduzir evidências empíricas da migração de retorno no Brasil contemporâneo, frequentemente associada à aposentadoria, ao retorno ao núcleo familiar ou à redução do custo de vida.
+
+A regra de idade atua de forma conjunta com a regra espacial, de modo que a intensidade e a direção dos fluxos migratórios resultam da interação entre a fase do ciclo de vida do indivíduo e a posição hierárquica das regiões envolvidas. Dessa forma, indivíduos em idades economicamente ativas tendem a apresentar maior probabilidade de migração em direção aos estados principais, enquanto indivíduos em idades mais avançadas apresentam maior propensão a deslocamentos intra-regionais ou de retorno aos estados secundários.
+
+Para a construção da idade, utilizou-se o Modelo de Rogers-Castro, que define o perfil etário da migração. O modelo em questão é uma soma de funções exponenciais que descreve um pico maior entre 18 e 35 anos e, às vezes, picos menores de aposentadoria e de migração infantil, considerando, respectivamente, idosos que retornam para suas cidades natal e crianças que migram para acompanhar os pais. A equação é dada por:
+
+$$\Phi(x) = a_1 e^{-\alpha_1 x} + a_2 e^{-\alpha_2(x - \mu_2) - e^{-\lambda_2(x - \mu_2)}} + a_3 e^{\alpha_3 x} + c$$
+
+
+Em que cada componente é uma função exponencial, que representa o quão intenso é o fluxo migratório para os determinados grupos etários. Os componentes dessa equação são: 1) o componente infantil de bebês  crianças pequenas que mudam de cidade para acompanhar seus pais, geralmente jovens adultos, que são migrantes; 2) o componente laboral, ou pico da curva e  elemento mais importante da equação; 3) componente de aposentadoria e 4) constante base, representando migrações independentes que não estão associadas ao ciclo de vida.
+
+No caso da população feminina, a regra de idade está diretamente integrada à estrutura de fecundidade do modelo. As probabilidades migratórias interagem com o fase da vida em que as mulheres são férteis, permitindo avaliar como os deslocamentos espaciais de mulheres em idades reprodutivas podem afetar simultaneamente a redistribuição populacional e a dinâmica da natalidade entre regiões. Isto é, a primeira exponencial, ligada ao componente de migrações infantis, está predominantemente ligada à migração das mulheres. A seção ix detalha melhor esse tópico.
+
+### Regra temporal
+
+Outro elemento que deve ser considerado no cálculo da migração é a estrutura por coortes populacionais. Essa estrutura indica a passagem do tempo e a mudança de faixa etária dos indivíduos ao longo dos anos. Isto é, o número de pessoas com, por exemplo, 10 anos de idade em um ano tem correlação com o número de pessoas com 11 anos de idade no ano seguinte, visto que elementos dizem respeito ao mesmo grupo de indivíduos. Pode-se dizer, portanto, que tempo e idade caminham juntos.
+
+No simulador, a divisão da população em coortes pode assumir diferentes níveis de agregação, conforme o objetivo analítico do experimento. No modelo adotado neste estudo, optou-se prioritariamente pela utilização de coortes quinquenais, variando de 0 a 4 anos até 85 a 89 anos, com um grupo aberto para idades iguais ou superiores a 90 anos. Essa escolha se deu principalmente por ser ampliamento utilizada em análises populacionais, incluindo em pesquisas do Instituto Brasileiro de Geografia e Estatística (IBGE).
+
+A dinâmica das coortes segue o princípio de que a cada período de tempo, os indivíduos sobreviventes de uma coorte avançam para a coorte imediatamente superior, ajustados pelas probabilidades de sobrevivência específicas por idade, sexo e região. Esse mecanismo garante a coerência de número de indivíduos ao longo do tempo e permite a integração direta com componentes de mortalidade e natalidade que são essenciais para o modelo
+
+No caso da população feminina, a estrutura de coortes é estendida pela incorporação da dimensão de ordem de paridade. Nela, cada coorte etária feminina é subdividida segundo o número de filhos já tidos, permitindo que as transições de fecundidade sejam modeladas como transições entre estados. Essa abordagem possibilita representar de forma mais realista a dinâmica reprodutiva, bem como suas interações com os fluxos migratórios, especialmente nas idades férteis.
+
+Sendo assim, matematicamente, a população masculina pode ser descrita através do produto entre o número de homens presentes em uma região e a probabilidade de sobrevivência daquele grupo, somados ao saldo migratório de quem sair de determinado estado e de quem chegou nesse mesmo estado em questão.
+
+$$M(t+1, r, i+1) = M(t, r, i) \cdot S_M(t, r, i) + \text{Mig}_M^{liq}(t, r, i)$$
+Ao mesmo tempo, matematicamente, a população feminina passa a ter uma dimensão a mais. A mulher avança em idade e pode ainda avançar em ordem de paridade, isto é, em número de filhos tidos. Desse modo, a equação se dá não apenas pela quantidade de mulheres, a taxa de sobrevivência e o saldo migratório, mas sobre o número de mulheres sobreviventes que não tiveram filhos somadas ao número de mães sobreviventes em cada ordem de paridade. Isso tudo, somado ainda à migração.
+
+$$F(t+1, r, i+1, o) = \underbrace{[F(t, r, i, o) \cdot S_F \cdot (1 - \Pi_{fec})]}_{\text{Sobreviventes que não tiveram filhos}} + \underbrace{[F(t, r, i, o-1) \cdot S_F \cdot \Pi_{fec}]}_{\text{Novas mães (transição de o-1 para o)}} + \text{Mig}_F^{liq}$$
+
+
+### Acrescimo de ruídos
+
+
+
+
+### Decomposição do tensor
+
+
+### Validação da lógica migratória
+
+
+### RESULTADOS E CONCLUSÕES
+
+
+
+REFERÊNCIAS
+
+CUNHA, José Marcos Pinto da. Migração e urbanização no Brasil: alguns desafios metodológicos para análise. São Paulo em Perspectiva, São Paulo, v. 19, n. 4, p. 3–20, out./dez. 2005. DOI: 10.1590/S0102-88392005000400001.
+

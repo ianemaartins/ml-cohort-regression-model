@@ -422,35 +422,32 @@ class VisualizadorTriadeDelta:
         idx_t = ano_alvo - self.anos[0]
         idx_est = self.estados.index(estado_nome)
 
-        # 1. Recuperamos a população do estado no ano alvo [Idade, Paridade]
-        # Somamos a paridade para ter apenas [Idade]
+        # Recupera a população do estado no ano alvo
         pop_m = self.m[idx_t] # [Estado, Idade]
         pop_f = self.f[idx_t] # [Estado, Idade]
         pop_total_est = pop_m + pop_f # [Estado, Idade]
 
-        # 2. Recriamos a Matriz de Transição 3D para esse cálculo
-        # (Isolando a parte que não é a diagonal)
+        # Recria a Matriz de Transição 3D para esse cálculo
         p_comp = np.array(self.sim.p_transicao_3d) # [De, Para, Idade]
 
-        # --- CÁLCULO DE QUEM SAI (Emigração) ---
-        # Probabilidade de sair = 1.0 - Probabilidade de ficar (diagonal)
+        # Cálculo de quem sai
         prob_sair = 1.0 - np.diagonal(p_comp, axis1=0, axis2=1) # [Idade, Estado]
         emigrantes = pop_total_est[idx_est, :] * prob_sair[:, idx_est]
 
-        # --- CÁLCULO DE QUEM CHEGA (Imigração) ---
+        # Cálculo de quem chega
         imigrantes = np.zeros(self.sim.n_idade)
         for i in range(self.sim.n_est):
             if i == idx_est: continue
             # Pessoas que saem do estado 'i' para o nosso estado alvo
             imigrantes += pop_total_est[i, :] * p_comp[i, idx_est, :]
 
-        # 3. Agrupamento Quinquenal para o gráfico
+        # Agrupamento Quinquenal para o gráfico
         in_quinq = self._agrupar_quinquenal(imigrantes)
         out_quinq = self._agrupar_quinquenal(emigrantes)
 
         faixas = [f"{i}-{i+4}" for i in range(0, 90, 5)] + ["90+"]
 
-        # 4. Plotagem
+        # Plotagem
         x = np.arange(len(faixas))
         largura = 0.4
 

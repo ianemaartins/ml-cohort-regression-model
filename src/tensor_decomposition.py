@@ -18,6 +18,10 @@ import seaborn as sns
 import yaml
 import numpy as np
 import pandas as pd
+import tensorly as tl
+from tensorly.decomposition import parafac
+
+tl.set_backend('jax')
 
 class SimuladorTriadeDelta:
     def __init__(self, caminho_config="src/config_decomp.yaml"):
@@ -288,9 +292,31 @@ class SimuladorTriadeDelta:
         # Retornamos o resíduo total (M+F) para a decomposição
         return res_m + res_f
 
+    def aplicar_ruido(self, residuo, intensidade=0.05):
+        """Aplica ruído aos dados finais antes da decomposição."""
+
+        # Cria uma chave aleatória simples usando JAX
+        chave = jrand.PRNGKey(42) 
+
+        # Ruído
+        ruido = jrand.normal(chave, residuo.shape) * intensidade * jnp.abs(residuo)
+
+        return residuo + ruido
+
+    def decompor_padroes(self, residuo_com_ruido, rank=3):
+        """Usa TensorLy para 'adivinhar' os componentes de Tempo, Espaço e Idade."""
+
+        # Garante que o TensorLy use o backend do JAX
+        tl.set_backend('jax')
+
+        # A decomposição extrai 'rank' padrões (ex: os 3 fluxos migratórios mais fortes)
+        pesos, fatores = parafac(residuo_com_ruido, rank=rank, init='svd')
+
+        return pesos, fatores
+
 
 class VisualizadorTriadeDelta:
-    def __init__(self, simulador, output_path="resultados_graficos"):
+    def __init__(self, simulador, dados_custom=None, output_path="resultados_graficos"):
         """
         Classe para visualização dos resultados da simulação.
         :param simulador: Instância da classe SimuladorTriadeDelta já executada.
@@ -298,21 +324,23 @@ class VisualizadorTriadeDelta:
         """
         self.sim = simulador
         self.estados = simulador.estados
-        self.anos = np.arange(
-            simulador.conf['dimensoes_tensor']['anos_simulacao_inicio'] 
-            if 'anos_simulacao_inicio' in simulador.conf['dimensoes_tensor'] 
-            else 1990, 
-                              (simulador.conf['dimensoes_tensor']['anos_simulacao_inicio'] 
-                               if 'anos_simulacao_inicio' in simulador.conf['dimensoes_tensor'] 
-                               else 1990) + simulador.n_anos)
+        
+        # Lógica de anos (simplificada)
+        ano_ini = simulador.conf['dimensoes_tensor'].get('anos_simulacao_inicio', 1990)
+        self.anos = np.arange(ano_ini, ano_ini + simulador.n_anos)
 
         self.output_path = output_path
-        # Cria a pasta de saída se ela não existir
         os.makedirs(self.output_path, exist_ok=True)
 
-        # Conversão de tensores JAX para NumPy para compatibilidade com Matplotlib
-        self.m = np.array(simulador.tensor_m)
-        self.f = np.array(jnp.sum(simulador.tensor_f, axis=-1)) # Soma as paridades para visualização geral
+        if dados_custom is not None:
+            # Se passarmos o resíduo, tratamos ele como a "população" a ser plotada
+            # Dividimos por 2 apenas para manter a compatibilidade com funções que somam M + F
+            self.m = np.array(dados_custom) / 2
+            self.f = np.array(dados_custom) / 2
+        else:
+            # Caso contrário, usa os dados normais da simulação
+            self.m = np.array(simulador.tensor_m)
+            self.f = np.array(jnp.sum(simulador.tensor_f, axis=-1))
 
     def _agrupar_quinquenal(self, dados_idade):
         """Agrupa dados de idades simples (0-90) em faixas quinquenais."""
@@ -473,21 +501,20 @@ if __name__ == "__main__":
     sim = SimuladorTriadeDelta()
     sim.simular()
     residuo_tensor = sim.calcular_residuo()
-    print(f"Tensor de Resíduo Migratório gerado: {residuo_tensor.shape}")
+    residuo_tensor_ruidoso = sim.aplicar_ruido(residuo_tensor, intensidade=0.9)
+    pesos_migracao, fatores_migracao = sim.decompor_padroes(residuo_tensor_ruidoso, rank=3)
+    print(f"Tensor de Resíduo Migratório gerado: {residuo_tensor_ruidoso.shape}")
 
-    viz = VisualizadorTriadeDelta(sim, output_path="graficos_artigo")
+    #visualização
+    viz = VisualizadorTriadeDelta(sim, residuo_tensor_ruidoso, output_path="graficos_artigo")
 
     # Gerar pirâmide da região x no ano y
-    viz.plot_piramide(2000, "A1")
-
+    viz.plot_piramide(2000, "A")
     # Comparar 3 estados
     viz.plot_evolucao_temporal(["A", "A1", "A2"])
-
     # Ver a variação de um estado
-    viz.plot_variacao_etaria("A1")
-
+    viz.plot_variacao_etaria("A")
     # Gerar o mapa de calor completo
     viz.plot_assinatura_migratoria()
-
     # Fluxo bruo de migração do estado x no ano y com todas as idades
-    viz.plot_fluxos_brutos(2010, 'B2')
+    viz.plot_fluxos_brutos(2010, 'A')

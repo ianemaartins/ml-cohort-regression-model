@@ -128,9 +128,13 @@ Essa normalização é necessária porque os estados possuem populações de mag
 
 Para verificar se a lógica migratória imposta ao simulador foi corretamente capturada, adotou-se uma estratégia de comparação entre dois cenários paralelos: uma população simulada com migração ativa e uma população de controle, idêntica em condições iniciais, porém evoluída sem qualquer fluxo migratório entre estados. O resíduo entre os dois cenários — isto é, a diferença entre a população real e a de controle — isola o efeito líquido da migração em cada estado ao longo do tempo.
 
-A Figura 1 apresenta a evolução da população total por estado nos dois cenários. É possível observar que os estados principais (A, B e C) acumulam população acima da trajetória de controle, refletindo o saldo migratório positivo esperado para polos de atração. Os estados secundários, por sua vez, tendem a apresentar trajetórias abaixo do controle, evidenciando a perda populacional associada à emigração em direção aos núcleos regionais.
+A figura "População Total por Estado: Real vs Controle" apresenta a evolução da população total por estado nos dois cenários. É possível observar que os estados principais (A, B e C) acumulam população acima da trajetória de controle, refletindo o saldo migratório positivo esperado para polos de atração. Os estados secundários, por sua vez, tendem a apresentar trajetórias abaixo do controle, evidenciando a perda populacional associada à emigração em direção aos núcleos regionais.
 
-Em seguida, aplicou-se a decomposição de Tucker ao resíduo migratório com ruído, com o objetivo de verificar se os padrões estruturais impostos ao modelo seriam recuperáveis a partir dos dados. A qualidade da reconstrução foi avaliada pelo erro relativo entre o tensor original e o tensor reconstruído, obtendo-se um valor de 0,14. A Figura 2 apresenta os mapas de calor do resíduo original e do resíduo reconstruído pela Tucker, agregados por estado e ano. A semelhança visual entre os dois painéis confirma que a decomposição foi capaz de capturar a estrutura dominante dos fluxos migratórios, mesmo após a adição de ruído.
+![Evolução da população por estado: Real vs Controle.](graficos_artigo/comparacao_espacial.png){#fig-comparacao-espacial width=100%}
+
+Em seguida, aplicou-se a decomposição de Tucker ao resíduo migratório com ruído, com o objetivo de verificar se os padrões estruturais impostos ao modelo seriam recuperáveis a partir dos dados. A qualidade da reconstrução foi avaliada pelo erro relativo entre o tensor original e o tensor reconstruído, obtendo-se um valor de 0,14. A figura a seguir apresenta os mapas de calor do resíduo original e do resíduo reconstruído pela Tucker, agregados por estado e ano. A semelhança visual entre os dois painéis confirma que a decomposição foi capaz de capturar a estrutura dominante dos fluxos migratórios, mesmo após a adição de ruído.
+
+![Resíduo original e reconstruído pela decomposição Tucker.](graficos_artigo/tucker_residuo_reconstruido.png){#fig-residuo-reconstruido width=100%}
 
 ### RESULTADOS E CONCLUSÕES
 

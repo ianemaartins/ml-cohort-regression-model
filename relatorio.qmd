@@ -98,8 +98,15 @@ $$F(t+1, r, i+1, o) = \underbrace{[F(t, r, i, o) \cdot S_F \cdot (1 - \Pi_{fec})
 
 ### Acrescimo de ruídos
 
+Após a simulação da dinâmica populacional, adicionou-se ruído ao resíduo migratório com o objetivo de aproximar os dados sintéticos de condições mais próximas da realidade, onde observações empíricas estão sujeitas a variações aleatórias, erros de medição e eventos atípicos.
 
+Optou-se pela distribuição t de Student com 5 graus de liberdade como mecanismo gerador do ruído. Em comparação com a distribuição normal, a t de Student apresenta caudas mais pesadas, o que implica maior probabilidade de ocorrência de valores extremos. Essa propriedade é desejável em dados migratórios, que frequentemente exibem choques pontuais — como crises econômicas, desastres naturais ou mudanças abruptas de política — que a distribuição normal tenderia a subestimar. O ruído é aplicado de forma proporcional à magnitude do resíduo em cada célula do tensor, preservando a estrutura relativa dos fluxos enquanto introduz variabilidade estocástica.
 
+A distribuição t de Student com $\nu$ graus de liberdade pode ser obtida como o quociente entre uma variável normal padrão $Z \sim \mathcal{N}(0,1)$ e a raiz quadrada de uma variável qui-quadrado normalizada $\chi^2_\nu / \nu$:
+
+$$t = \frac{Z}{\sqrt{\chi^2_\nu / \nu}}$$
+
+Como a biblioteca JAX não possui implementação nativa da distribuição t, essa decomposição foi utilizada diretamente no código, gerando $Z$ por amostragem normal e $\chi^2_\nu$ a partir de uma distribuição Gamma.
 
 ### Decomposição do tensor
 

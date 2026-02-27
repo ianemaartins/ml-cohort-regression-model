@@ -19,15 +19,11 @@ Para a realização da simulação, são gerados dados referentes a um país fic
 
 O código-fonte do simulador está disponível em <https://github.com/ianemaartins/ml-cohort-regression-model>.
 
-## DECOMPOSIÇÃO DE TENSORES
-
-[Escrever sobre referencial teórico da decomposição de tensores e explicar a matmeática relacionada ao assunto]
-
 ## SIMULAÇÃO DOS DADOS E MODELO
 
 ### Dados simulados
 
-Para a validação do modelo com dados sintéticos, foi criado um país fictício denominado Tríade-Delta. A simulação teve como objetivo gerar séries populacionais no período de 1990 a 2030, inspiradas na dinâmica demográfica e migratória observada no Brasil. As condições iniciais da população foram definidas a partir da distribuição populacional de alguns estados brasileiros observada no Censo Demográfico de 1990. A partir desse ponto inicial, os dados foram projetados ao longo do tempo seguindo a lógica matemática descrita nas Seções i, ii e iii deste capítulo. Foram adicionados também ruídos para acrescentar alguma complexidade ao modelo.
+Para a validação do modelo com dados sintéticos, foi criado um país fictício denominado Tríade-Delta. A simulação teve como objetivo gerar séries populacionais no período de 1990 a 2022, inspiradas na dinâmica demográfica e migratória observada no Brasil. As condições iniciais da população foram definidas a partir da distribuição populacional de alguns estados brasileiros observada no Censo Demográfico de 1990. A partir desse ponto inicial, os dados foram projetados ao longo do tempo seguindo a lógica matemática descrita nas Seções i, ii e iii deste capítulo. Foram adicionados também ruídos para acrescentar alguma complexidade ao modelo.
 
 Além disso, as lógicas matemáticas empregadas também tiveram como inspiração a população brasileira ao longo dos anos. Ressalta-se que, embora o modelo seja inspirado nessa dinâmica demográfica, migratória e geopolítica brasileira, trata-se exclusivamente de um exercício com dados sintéticos, não havendo qualquer pretensão de reproduzir ou estimar diretamente os fluxos reais observados no Brasil.
 
@@ -36,7 +32,7 @@ Uma vez gerados os dados populacionais e migratórios, aplicou-se a decomposiç�
 
 ### Regra espacial
 
-A lógica espacial adotada no simulador Tríade-Delta foi construída de forma a reproduzir, de maneira estilizada, os principais padrões da migração interna brasileira observados a partir da década de 1990. Nesse período, conforme discutido em (CUNHA, 2005), a migração no Brasil passa a apresentar menor predominância do fluxo da zona rural para a urbana e maior relevância na migração entre centros urbanos, de curta e média distância, organizados segundo hierarquias regionais e redes urbanas.
+A lógica espacial adotada no simulador Tríade-Delta foi construída de forma a reproduzir, de maneira estilizada, os principais padrões da migração interna brasileira observados a partir da década de 1990. Nesse período, conforme discutido em Cunha (2005), a migração no Brasil passa a apresentar menor predominância do fluxo da zona rural para a urbana e maior relevância na migração entre centros urbanos, de curta e média distância, organizados segundo hierarquias regionais e redes urbanas.
 
 Desse modo, o território do país fictício foi dividido em 12 estados, sendo que três desses estados possuem maior influência na região, formando três sistemas regionais relativamente independentes, cada um composto por um estado principal e três estados secundários. Os estados principais representam centros de maior concentração econômica e populacional, enquanto os estados secundários funcionam como regiões intermediárias, com menor densidade populacional e forte integração funcional ao respectivo núcleo regional. 
 
@@ -126,7 +122,7 @@ Essa normalização é necessária porque os estados possuem populações de mag
 
 ### Validação da lógica migratória
 
-Para verificar se a lógica migratória imposta ao simulador foi corretamente capturada, adotou-se uma estratégia de comparação entre dois cenários paralelos: uma população simulada com migração ativa e uma população de controle, idêntica em condições iniciais, porém evoluída sem qualquer fluxo migratório entre estados. O resíduo entre os dois cenários — isto é, a diferença entre a população real e a de controle — isola o efeito líquido da migração em cada estado ao longo do tempo.
+Para verificar se a lógica migratória imposta ao simulador foi corretamente capturada, adotou-se uma estratégia de comparação entre dois cenários paralelos. Foi construída uma população simulada com migração ativa e uma população de controle, idêntica em condições iniciais, porém evoluída sem qualquer fluxo migratório entre estados. O resíduo entre os dois cenários, isto é, a diferença entre a população real e a de controle, isola o efeito líquido da migração em cada estado ao longo do tempo.
 
 A figura "População Total por Estado: Real vs Controle" apresenta a evolução da população total por estado nos dois cenários. É possível observar que os estados principais (A, B e C) acumulam população acima da trajetória de controle, refletindo o saldo migratório positivo esperado para polos de atração. Os estados secundários, por sua vez, tendem a apresentar trajetórias abaixo do controle, evidenciando a perda populacional associada à emigração em direção aos núcleos regionais.
 
@@ -140,9 +136,9 @@ Em seguida, aplicou-se a decomposição de Tucker ao resíduo migratório com ru
 
 O presente trabalho demonstrou que a decomposição de Tucker é capaz de recuperar, com fidelidade satisfatória, a estrutura migratória previamente imposta a um simulador populacional sintético. Com um erro relativo de reconstrução de 0,14, os padrões espaciais, temporais e etários dos fluxos migratórios foram identificados a partir do resíduo entre a população simulada com migração e a população de controle, mesmo após a adição de ruído.
 
-Como desdobramento natural deste trabalho, a estrutura desenvolvida abre caminho para aplicações preditivas: os fatores extraídos pela decomposição de Tucker podem ser utilizados para projetar a população de anos futuros, extrapolando os padrões migratórios identificados para além do período simulado. Essa extensão representaria uma contribuição metodológica relevante para modelos de projeção populacional que carecem de dados migratórios confiáveis.
+Como desdobramento natural deste trabalho, a estrutura desenvolvida abre caminho para aplicações preditivas, em que os fatores extraídos pela decomposição de Tucker podem ser utilizados para projetar a população de anos futuros, extrapolando os padrões migratórios identificados para além do período simulado. Essa extensão representaria uma contribuição metodológica relevante para modelos de projeção populacional que carecem de dados migratórios confiáveis.
 
-Mais amplamente, estudos dessa natureza têm relevância direta para o planejamento em múltiplos âmbitos — econômico, social, educacional, de saúde pública e de infraestrutura urbana —, uma vez que a distribuição espacial e etária da população condiciona a demanda por serviços e recursos em cada região. A capacidade de simular e recuperar padrões migratórios a partir de dados sintéticos constitui, portanto, um passo metodológico importante para subsidiar análises futuras com dados reais.
+Mais amplamente, estudos dessa natureza têm relevância direta para o planejamento em múltiplos âmbitos, dentre eles econômico, social, educacional, de saúde pública e de infraestrutura urbana, visto que a distribuição espacial e etária da população condiciona a demanda por serviços e recursos em cada região. A capacidade de simular e recuperar padrões migratórios a partir de dados sintéticos constitui, portanto, um passo metodológico importante para subsidiar análises futuras com dados reais.
 
 ### REFERÊNCIAS
 

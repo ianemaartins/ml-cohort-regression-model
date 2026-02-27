@@ -19,7 +19,8 @@ import yaml
 import numpy as np
 import pandas as pd
 import tensorly as tl
-from tensorly.decomposition import parafac
+from tensorly.decomposition import tucker
+from tensorly import tucker_to_tensor
 
 tl.set_backend('jax')
 
@@ -39,6 +40,7 @@ class SimuladorTriadeDelta:
         # Pré-calculo da matemática das imputações
         self.p_espacial = self._gerar_matriz_espacial()
         self.phi_idade = self._gerar_perfil_rogers_castro()
+        self.s_idade = self._gerar_curva_sobrevivencia()
 
         # gerar a guardar o tensor 3d
         self.p_transicao_3d = self._construir_tensor_completo()
@@ -55,6 +57,7 @@ class SimuladorTriadeDelta:
 
         self._set_populacao_inicial()
 
+    # TODO: melhorar nomeação de métodos e variáveis; melhorar docstring.
     def _gerar_matriz_espacial(self):
         """Constrói a matriz de probabilidades baseada na hierarquia regional."""
         w = np.zeros((self.n_est, self.n_est))
@@ -121,10 +124,19 @@ class SimuladorTriadeDelta:
         c_aposentadoria = p['intensidade_a3'] * jnp.exp(p['queda_aposentadoria_a2'] * (x - 65))
         c_aposentadoria = jnp.where(x < 50, 0, c_aposentadoria) # Só ativa após a idade determinada
 
-        phi = c_infantil + c_laboral + c_aposentadoria + p['constante_c']
+        phi = c_infantil + c_laboral + c_aposentadoria
 
         # Normaliza para média 1.0 para não alterar a massa total da taxa global
         return phi / jnp.mean(phi)
+
+    def _gerar_curva_sobrevivencia(self):
+        """Gera probabilidade de sobrevivência por idade via curva de Gompertz.
+        s(x) = exp(-alpha * exp(beta * x))
+        """
+        x = jnp.arange(self.n_idade, dtype=jnp.float32)
+        g = self.conf['regra_temporal']
+        mu = g['gompertz_alpha'] * jnp.exp(g['gompertz_beta'] * x)
+        return jnp.exp(-mu)
 
     def _set_populacao_inicial(self):
         """Distribui a população de 1990 seguindo uma pirâmide etária jovem."""
@@ -180,10 +192,10 @@ class SimuladorTriadeDelta:
    
         return p_3d
 
-    # O (0, 3) indica que o 1º argumento (self) e o 4º (aplicar_migracao) 
-    # não devem ser transformados em arrays do JAX.
-    @partial(jit, static_argnums=(0, 3))
-    def _evoluir_ano(self, pop_m, pop_f, aplicar_migracao=True):
+    # O (0, 3, 4) indica que self, aplicar_migracao e t não devem ser
+    # transformados em arrays do JAX.
+    @partial(jit, static_argnums=(0, 3, 4))
+    def _evoluir_ano(self, pop_m, pop_f, aplicar_migracao=True, t=0):
         """
         Evolui a população masculina e feminina em um passo anual, incorporando
         envelhecimento, mortalidade, fecundidade e migração espacial.
@@ -221,37 +233,43 @@ class SimuladorTriadeDelta:
 
         """
         # parâmetros
-        s = self.conf['regra_temporal']['probabilidade_sobrevivencia_base']
         rsn = self.conf['regras_espaciais']['razao_sexo_nascimento']
-        f_pico = self.conf['regra_temporal']['taxa_fecundidade_pico']
+        f_ini = self.conf['regra_temporal']['fecundidade_inicio']
+        f_fim = self.conf['regra_temporal']['fecundidade_fim']
+        taxa_fec = f_ini * (f_fim / f_ini) ** (t / (self.n_anos - 1))
 
         # --- FECUNDIDADE E TRANSIÇÃO DE PARIDADE
         idades = jnp.arange(self.n_idade)
         fec_mask = (idades >= 15) & (idades <= 49)
-        pi_fec = jnp.where(fec_mask, f_pico, 0.0)
+        pi_fec = jnp.where(fec_mask, taxa_fec, 0.0)
 
-        sobreviventes_f = pop_f * s
-        novas_maes = sobreviventes_f[:, :, :-1] * pi_fec[None, :, None]
+        sobreviventes_f = pop_f * self.s_idade[None, :, None]
+
+        # Mulheres que NÃO estão na paridade máxima: podem avançar
+        novas_maes_transicao = sobreviventes_f[:, :, :-1] * pi_fec[None, :, None]
+        # Mulheres na paridade máxima: têm filhos mas permanecem no mesmo índice
+        novas_maes_teto = sobreviventes_f[:, :, -1:] * pi_fec[None, :, None]
 
         # Envelhecimento + Transição
         prox_f = jnp.zeros_like(pop_f)
-        
-        # Aquelas que NÃO tiveram filhos permanecem na mesma paridade 'o' e envelhecem
+
+        # Aquelas que NÃO tiveram filhos permanecem na mesma paridade e envelhecem
         permanecem_na_ordem = sobreviventes_f.at[:, :, :-1].multiply(1.0 - pi_fec[None, :, None])
-        permanecem_na_ordem = permanecem_na_ordem.at[:, :, -1].set(sobreviventes_f[:, :, -1])
+        # Paridade máxima: sobreviventes que não tiveram filhos + as que tiveram (ficam no teto)
+        permanecem_na_ordem = permanecem_na_ordem.at[:, :, -1].set(
+            sobreviventes_f[:, :, -1] * (1.0 - pi_fec[None, :]) + novas_maes_teto[:, :, 0]
+        )
         prox_f = prox_f.at[:, 1:, :].add(permanecem_na_ordem[:, :-1, :])
-        
+
         # Aquelas que tiveram filhos: avançam para paridade 'o+1' e envelhecem
-        prox_f = prox_f.at[:, 1:, 1:].add(novas_maes[:, :-1, :])
+        prox_f = prox_f.at[:, 1:, 1:].add(novas_maes_transicao[:, :-1, :])
 
         # --- NASCIMENTOS
-        total_nascidos = jnp.sum(novas_maes, axis=(1, 2))
-        # Fecundidade: chance de 15% ao ano para mulheres entre 15-45 anos
-
+        total_nascidos = jnp.sum(novas_maes_transicao, axis=(1, 2)) + jnp.sum(novas_maes_teto, axis=(1, 2))
 
         # Evolução masculina
         prox_m = jnp.zeros_like(pop_m)
-        prox_m = prox_m.at[:, 1:].set(pop_m[:, :-1] * s)
+        prox_m = prox_m.at[:, 1:].set(pop_m[:, :-1] * self.s_idade[None, :-1])
         
         # Inserção da Coorte Zero em ambos os sexos
         prox_m = prox_m.at[:, 0].set(total_nascidos * (rsn / (1 + rsn)))
@@ -259,7 +277,6 @@ class SimuladorTriadeDelta:
 
         # --- MIGRAÇÃO COM CONSERVAÇÃO
         if aplicar_migracao:
-
             prox_m = jnp.einsum('ik,ijk->jk', prox_m, self.p_transicao_3d)
             prox_f = jnp.einsum('ikp,ijk->jkp', prox_f, self.p_transicao_3d)
 
@@ -267,20 +284,35 @@ class SimuladorTriadeDelta:
 
     def simular(self):
         """Roda o loop de anos para População Real e População de Controle."""
+        f_ini = self.conf['regra_temporal']['fecundidade_inicio']
+        f_fim = self.conf['regra_temporal']['fecundidade_fim']
+        ordens = np.arange(self.n_paridade)
+
+        print(f"{'Ano':>6} {'Taxa Fec':>10} {'Filhos Medios':>14}")
+        print("-" * 34)
 
         for t in range(self.n_anos - 1):
+            taxa_fec = f_ini * (f_fim / f_ini) ** (t / (self.n_anos - 2))
 
             # Evolução Real (Com Migração)
-            m_real, f_real = self._evoluir_ano(self.tensor_m[t], self.tensor_f[t], True)
+            m_real, f_real = self._evoluir_ano(self.tensor_m[t], self.tensor_f[t], True, t)
             self.tensor_m = self.tensor_m.at[t+1].set(m_real)
             self.tensor_f = self.tensor_f.at[t+1].set(f_real)
 
             # Evolução Controle (Sem Migração)
-            m_ctrl, f_ctrl = self._evoluir_ano(self.controle_m[t], self.controle_f[t], False)
+            m_ctrl, f_ctrl = self._evoluir_ano(self.controle_m[t], self.controle_f[t], False, t)
             self.controle_m = self.controle_m.at[t+1].set(m_ctrl)
             self.controle_f = self.controle_f.at[t+1].set(f_ctrl)
 
-        print("Simulação finalizada.")
+            # Métrica: número médio de filhos ponderado pela distribuição de paridade
+            dist_par = np.array(self.tensor_f[t+1].sum(axis=(0, 1)))  # [Paridade]
+            total_f = dist_par.sum()
+            filhos_medios = float((dist_par * ordens).sum() / total_f) if total_f > 0 else 0.0
+
+            ano = self.conf['dimensoes_tensor'].get('anos_simulacao_inicio', 1990) + t
+            print(f"{ano:>6} {taxa_fec:>10.4f} {filhos_medios:>14.4f}")
+
+        print("\nSimulação finalizada.")
 
     def calcular_residuo(self):
         """Retorna o Tensor R = Pop_Real - Pop_Controle."""
@@ -292,27 +324,32 @@ class SimuladorTriadeDelta:
         # Retornamos o resíduo total (M+F) para a decomposição
         return res_m + res_f
 
-    def aplicar_ruido(self, residuo, intensidade=0.05):
-        """Aplica ruído aos dados finais antes da decomposição."""
+    def aplicar_ruido(self, residuo, intensidade=0.05, df=5):
+        """Aplica ruído t de Student (df graus de liberdade) antes da decomposição."""
+        chave_z, chave_chi2 = jrand.split(jrand.PRNGKey(42))
 
-        # Cria uma chave aleatória simples usando JAX
-        chave = jrand.PRNGKey(42) 
-
-        # Ruído
-        ruido = jrand.normal(chave, residuo.shape) * intensidade * jnp.abs(residuo)
+        z = jrand.normal(chave_z, residuo.shape)
+        chi2 = 2.0 * jrand.gamma(chave_chi2, df / 2.0, shape=residuo.shape)
+        ruido = (z / jnp.sqrt(chi2 / df)) * intensidade * jnp.abs(residuo)
 
         return residuo + ruido
 
-    def decompor_padroes(self, residuo_com_ruido, rank=3):
-        """Usa TensorLy para 'adivinhar' os componentes de Tempo, Espaço e Idade."""
-
-        # Garante que o TensorLy use o backend do JAX
+    def decompor_padroes(self, residuo_com_ruido, ranks=(5, 3, 10)):
+        """Decompõe o resíduo via Tucker: núcleo + fatores por dimensão [Tempo, Espaço, Idade]."""
         tl.set_backend('jax')
 
-        # A decomposição extrai 'rank' padrões (ex: os 3 fluxos migratórios mais fortes)
-        pesos, fatores = parafac(residuo_com_ruido, rank=rank, init='svd')
+        # Normalização por estado para equilibrar estados de diferentes tamanhos
+        std = jnp.std(residuo_com_ruido, axis=(0, 2), keepdims=True) + 1e-8
+        residuo_norm = residuo_com_ruido / std
 
-        return pesos, fatores
+        nucleo, fatores = tucker(residuo_norm, rank=ranks)
+
+        # Erro relativo de reconstrução
+        reconstruido = tucker_to_tensor((nucleo, fatores))
+        erro = tl.norm(residuo_norm - reconstruido) / tl.norm(residuo_norm)
+        print(f"Erro relativo de reconstrução Tucker: {float(erro):.4f}")
+
+        return nucleo, fatores, std
 
 
 class VisualizadorTriadeDelta:

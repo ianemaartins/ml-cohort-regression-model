@@ -1,8 +1,7 @@
 ---
 title: "Simulação de dados migratórios: aplicação de um modelo de decomposição de tensores"
 author:
-  - "Iane Maria Santos Martins"
-  - "Vitor Facco Calmon"
+  - "Iane Maria Santos Martins e Vitor Facco Calmon"
 format: 
   pdf: 
     fig-cap: true

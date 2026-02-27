@@ -36,7 +36,7 @@ Uma vez gerados os dados populacionais e migratórios, aplicou-se a decomposiç�
 
 ### Regra espacial
 
-A lógica espacial adotada no simulador Tríade-Delta foi construída de forma a reproduzir, de maneira estilizada, os principais padrões da migração interna brasileira observados a partir da década de 1990. Nesse período, conforme discutido em (xxxxxx), a migração no Brasil passa a apresentar menor predominância do fluxo da zona rural para a urbana e maior relevância na migração entre centros urbanos, de curta e média distância, organizados segundo hierarquias regionais e redes urbanas.
+A lógica espacial adotada no simulador Tríade-Delta foi construída de forma a reproduzir, de maneira estilizada, os principais padrões da migração interna brasileira observados a partir da década de 1990. Nesse período, conforme discutido em (CUNHA, 2005), a migração no Brasil passa a apresentar menor predominância do fluxo da zona rural para a urbana e maior relevância na migração entre centros urbanos, de curta e média distância, organizados segundo hierarquias regionais e redes urbanas.
 
 Desse modo, o território do país fictício foi dividido em 12 estados, sendo que três desses estados possuem maior influência na região, formando três sistemas regionais relativamente independentes, cada um composto por um estado principal e três estados secundários. Os estados principais representam centros de maior concentração econômica e populacional, enquanto os estados secundários funcionam como regiões intermediárias, com menor densidade populacional e forte integração funcional ao respectivo núcleo regional. 
 
@@ -57,7 +57,7 @@ $$p_{ii} = 1 - \sum_{j \neq i} p_{ij}$$
 
 ### Regra de idade
 
-Fulano (xxxx) aponta que a mobilidade populacional no Brasil apresenta uma concentração marcante nas idades jovens e adultas jovens, associadas à inserção no mercado de trabalho, à continuidade dos estudos e à formação familiar.
+Rogers e Castro (1981) apontam que a mobilidade populacional no Brasil apresenta uma concentração marcante nas idades jovens e adultas jovens, associadas à inserção no mercado de trabalho, à continuidade dos estudos e à formação familiar.
 
 No modelo, assume-se que as probabilidades migratórias são estruturadas de forma não homogênea em relação à idade, apresentando valores baixos nas idades iniciais da infância, um aumento progressivo ao longo da adolescência e um pico concentrado nas idades jovens-adultas, aproximadamente entre 18 e 35 anos. A partir desse intervalo, observa-se uma redução gradual da migração, representando um momento de maior estabilidade da vida adulta, com constituição de família, estabelecimento de uma moradia fixa mais consolidada, carreira e vida financeira também mais estáveis.
 
@@ -65,7 +65,7 @@ Para idades mais avançadas, o modelo reflete a ocorrência de migração de ret
 
 A regra de idade atua de forma conjunta com a regra espacial, de modo que a intensidade e a direção dos fluxos migratórios resultam da interação entre a fase do ciclo de vida do indivíduo e a posição hierárquica das regiões envolvidas. Dessa forma, indivíduos em idades economicamente ativas tendem a apresentar maior probabilidade de migração em direção aos estados principais, enquanto indivíduos em idades mais avançadas apresentam maior propensão a deslocamentos intra-regionais ou de retorno aos estados secundários.
 
-Para a construção da idade, utilizou-se o Modelo de Rogers-Castro, que define o perfil etário da migração. O modelo em questão é uma soma de funções exponenciais que descreve um pico maior entre 18 e 35 anos e, às vezes, picos menores de aposentadoria e de migração infantil, considerando, respectivamente, idosos que retornam para suas cidades natal e crianças que migram para acompanhar os pais. A equação é dada por:
+Para a construção da idade, utilizou-se o Modelo de Rogers-Castro (ROGERS; CASTRO, 1981), que define o perfil etário da migração. O modelo em questão é uma soma de funções exponenciais que descreve um pico maior entre 18 e 35 anos e, às vezes, picos menores de aposentadoria e de migração infantil, considerando, respectivamente, idosos que retornam para suas cidades natal e crianças que migram para acompanhar os pais. A equação é dada por:
 
 $$\Phi(x) = a_1 e^{-\alpha_1 x} + a_2 e^{-\alpha_2(x - \mu_2) - e^{-\lambda_2(x - \mu_2)}} + a_3 e^{\alpha_3 x} + c$$
 
@@ -135,7 +135,9 @@ Em seguida, aplicou-se a decomposição de Tucker ao resíduo migratório com ru
 
 
 
-REFERÊNCIAS
+### REFERÊNCIAS
 
 CUNHA, José Marcos Pinto da. Migração e urbanização no Brasil: alguns desafios metodológicos para análise. São Paulo em Perspectiva, São Paulo, v. 19, n. 4, p. 3–20, out./dez. 2005. DOI: 10.1590/S0102-88392005000400001.
+
+ROGERS, Andrei; CASTRO, Luis J. Model migration schedules. Laxenburg: International Institute for Applied Systems Analysis, 1981.
 

@@ -110,6 +110,14 @@ Como a biblioteca JAX não possui implementação nativa da distribuição t, es
 
 ### Decomposição do tensor
 
+Para identificar os padrões estruturais presentes no resíduo migratório, aplicou-se a decomposição de Tucker ao tensor tridimensional de dimensões $[\text{Tempo} \times \text{Espaço} \times \text{Idade}]$. A decomposição de Tucker fatoriza o tensor em um núcleo $\mathcal{G}$ e três matrizes de fatores $U^{(t)}$, $U^{(s)}$ e $U^{(e)}$, correspondentes às dimensões temporal, espacial e etária, respectivamente:
+$$\mathcal{X} \approx \mathcal{G} \times_1 U^{(t)} \times_2 U^{(s)} \times_3 U^{(e)}$$
+
+Antes de aplicar a decomposição, o tensor foi normalizado dividindo cada fatia espacial pelo seu desvio padrão calculado sobre as dimensões temporal e etária:
+
+$$\tilde{\mathcal{X}}_{t,s,e} = \frac{\mathcal{X}_{t,s,e}}{\sigma_s}$$
+
+Essa normalização é necessária porque os estados possuem populações de magnitudes muito distintas — o estado A, por exemplo, possui população inicial de 34 milhões, enquanto o estado A3 possui apenas 1,7 milhão. Sem essa etapa, a decomposição seria dominada pelos estados mais populosos, obscurecendo os padrões migratórios dos estados menores. Após a decomposição, o tensor reconstruído é desnormalizado multiplicando-se pelo desvio padrão correspondente, permitindo a comparação direta com o resíduo original.
 
 ### Validação da lógica migratória
 

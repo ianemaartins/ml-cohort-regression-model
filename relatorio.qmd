@@ -68,6 +68,12 @@ $$\Phi(x) = a_1 e^{-\alpha_1 x} + a_2 e^{-\alpha_2(x - \mu_2) - e^{-\lambda_2(x 
 
 Em que cada componente é uma função exponencial, que representa o quão intenso é o fluxo migratório para os determinados grupos etários. Os componentes dessa equação são: 1) o componente infantil de bebês  crianças pequenas que mudam de cidade para acompanhar seus pais, geralmente jovens adultos, que são migrantes; 2) o componente laboral, ou pico da curva e  elemento mais importante da equação; 3) componente de aposentadoria e 4) constante base, representando migrações independentes que não estão associadas ao ciclo de vida.
 
+Além do perfil migratório, a regra de idade também governa a mortalidade da população. Para isso, utiliza-se a curva de Gompertz, que modela a probabilidade de sobrevivência $s(x)$ em função da idade $x$:
+
+$$s(x) = \exp\left(-\alpha \cdot e^{\beta x}\right)$$
+
+Os parâmetros $\alpha$ e $\beta$ controlam, respectivamente, o nível base de mortalidade e a velocidade com que ela se acelera com o envelhecimento. Essa formulação captura o fato empiricamente observado de que a probabilidade de morte aumenta de forma exponencial com a idade: indivíduos mais velhos apresentam probabilidade de sobrevivência significativamente menor do que indivíduos jovens. No modelo, $s(x)$ é aplicada a cada coorte etária a cada passo temporal, garantindo que o envelhecimento da população seja acompanhado de uma mortalidade crescente e biologicamente plausível.
+
 No caso da população feminina, a regra de idade está diretamente integrada à estrutura de fecundidade do modelo. As probabilidades migratórias interagem com o fase da vida em que as mulheres são férteis, permitindo avaliar como os deslocamentos espaciais de mulheres em idades reprodutivas podem afetar simultaneamente a redistribuição populacional e a dinâmica da natalidade entre regiões. Isto é, a primeira exponencial, ligada ao componente de migrações infantis, está predominantemente ligada à migração das mulheres. A seção ix detalha melhor esse tópico.
 
 ### Regra temporal

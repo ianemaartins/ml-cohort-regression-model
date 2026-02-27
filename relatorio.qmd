@@ -17,6 +17,8 @@ Como forma de contribuir para a melhoria da estimação dos dados migratórios n
 
 Para a realização da simulação, são gerados dados referentes a um país fictício, denominado Tríade Delta, composto por 12 estados divididos em sub-regiões. A partir desse cenário hipotético, estabelece-se uma lógica explícita para a geração dos dados populacionais e migratórios. Em seguida, aplica-se uma decomposição de tensores com o objetivo de avaliar se o modelo é capaz de identificar e reproduzir a estrutura migratória previamente imposta. Ressalta-se que, na construção do modelo, são consideradas simultaneamente a dimensão espacial de estados e sub-regiões, a dimensão temporal que permite a análise em termos de séries históricas, e a estrutura etária da população migrante. Além disso, incorpora-se a diferenciação por sexo e, no caso das mulheres, a taxa de fecundidade, possibilitando avaliar como os fluxos migratórios podem interferir na dinâmica da natalidade entre regiões.
 
+O código-fonte do simulador está disponível em <https://github.com/ianemaartins/ml-cohort-regression-model>.
+
 ## DECOMPOSIÇÃO DE TENSORES
 
 [Escrever sobre referencial teórico da decomposição de tensores e explicar a matmeática relacionada ao assunto]

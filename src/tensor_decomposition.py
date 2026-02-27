@@ -387,6 +387,90 @@ class VisualizadorTriadeDelta:
         agrupado.append(dados_idade[90:].sum()) 
         return np.array(agrupado)
 
+    def plot_comparacao_espacial(self):
+        """Compara população total por estado: Real vs Controle ao longo do tempo."""
+        real = np.array(self.sim.tensor_m) + np.array(jnp.sum(self.sim.tensor_f, axis=-1))  # [Ano, Estado, Idade]
+        ctrl = np.array(self.sim.controle_m) + np.array(jnp.sum(self.sim.controle_f, axis=-1))
+
+        real_est = real.sum(axis=2)  # [Ano, Estado]
+        ctrl_est = ctrl.sum(axis=2)
+
+        fig, axes = plt.subplots(3, 4, figsize=(18, 12), sharex=True)
+        for idx, (ax, estado) in enumerate(zip(axes.flat, self.estados)):
+            ax.plot(self.anos, real_est[:, idx], label='Real', color='steelblue')
+            ax.plot(self.anos, ctrl_est[:, idx], label='Controle', color='coral', linestyle='--')
+            ax.set_title(f"Estado {estado}")
+            ax.set_ylim(0, 1e8)
+            ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f'{x/1e8:.1f}'))
+            ax.grid(True, alpha=0.3)
+            if idx == 0:
+                ax.legend(fontsize=8)
+        plt.suptitle("População Total por Estado: Real vs Controle")
+        plt.tight_layout()
+        filename = "comparacao_espacial.png"
+        plt.savefig(os.path.join(self.output_path, filename), dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f"Gráfico salvo: {filename}")
+
+    def plot_comparacao_etaria(self):
+        """Compara perfil etário agregado: Real vs Controle no início, meio e fim."""
+        real = np.array(self.sim.tensor_m) + np.array(jnp.sum(self.sim.tensor_f, axis=-1))  # [Ano, Estado, Idade]
+        ctrl = np.array(self.sim.controle_m) + np.array(jnp.sum(self.sim.controle_f, axis=-1))
+
+        real_idade = real.sum(axis=1)  # [Ano, Idade]
+        ctrl_idade = ctrl.sum(axis=1)
+
+        anos_alvo = [0, len(self.anos) // 2, -1]
+        rotulos = [str(self.anos[i]) for i in anos_alvo]
+        idades = np.arange(self.sim.n_idade)
+
+        fig, axes = plt.subplots(1, 3, figsize=(18, 5), sharey=True)
+        for ax, idx_t, rotulo in zip(axes, anos_alvo, rotulos):
+            ax.plot(idades, real_idade[idx_t], label='Real', color='steelblue')
+            ax.plot(idades, ctrl_idade[idx_t], label='Controle', color='coral', linestyle='--')
+            ax.set_title(f"Ano {rotulo}")
+            ax.set_xlabel("Idade")
+            ax.legend()
+            ax.grid(True, alpha=0.3)
+        axes[0].set_ylabel("População")
+        plt.suptitle("Perfil Etário Agregado: Real vs Controle")
+        plt.tight_layout()
+        filename = "comparacao_etaria.png"
+        plt.savefig(os.path.join(self.output_path, filename), dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f"Gráfico salvo: {filename}")
+
+    def plot_comparacao_paridade(self):
+        """Compara distribuição relativa de paridade feminina: Real vs Controle ao longo do tempo."""
+        real_f = np.array(self.sim.tensor_f)   # [Ano, Estado, Idade, Paridade]
+        ctrl_f = np.array(self.sim.controle_f)
+
+        # Soma sobre estados e idades -> [Ano, Paridade]
+        real_par = real_f.sum(axis=(1, 2))
+        ctrl_par = ctrl_f.sum(axis=(1, 2))
+
+        # Proporção relativa ao total de mulheres em cada ano
+        real_prop = real_par / real_par.sum(axis=1, keepdims=True)
+        ctrl_prop = ctrl_par / ctrl_par.sum(axis=1, keepdims=True)
+
+        n_par = real_prop.shape[1]
+        fig, axes = plt.subplots(1, n_par, figsize=(4 * n_par, 5), sharey=True)
+        for o, ax in enumerate(axes):
+            ax.plot(self.anos, real_prop[:, o], label='Real', color='steelblue')
+            ax.plot(self.anos, ctrl_prop[:, o], label='Controle', color='coral', linestyle='--')
+            ax.set_title(f"Paridade {o}" if o < n_par - 1 else f"Paridade {o}+")
+            ax.set_xlabel("Ano")
+            ax.grid(True, alpha=0.3)
+            if o == 0:
+                ax.set_ylabel("Proporção de Mulheres")
+                ax.legend()
+        plt.suptitle("Distribuição Relativa de Paridade Feminina: Real vs Controle")
+        plt.tight_layout()
+        filename = "comparacao_paridade.png"
+        plt.savefig(os.path.join(self.output_path, filename), dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f"Gráfico salvo: {filename}")
+
     def plot_piramide(self, ano_alvo, estado_nome):
         """Gera e salva a Pirâmide Etária (Homens vs Mulheres)."""
         idx_t = ano_alvo - self.anos[0]
@@ -531,6 +615,167 @@ class VisualizadorTriadeDelta:
         plt.close()
         print(f"Gráfico de fluxos brutos salvo: {filename}")
 
+    def plot_fator_temporal(self, fatores):
+        """Plota os padrões temporais extraidos pela decomposição Tucker."""
+        fator = np.array(fatores[0])  # [n_anos, n_componentes]
+        plt.figure(figsize=(12, 5))
+        for k in range(fator.shape[1]):
+            plt.plot(self.anos, fator[:, k], marker='o', markersize=3, label=f"Componente {k+1}")
+        plt.axhline(0, color='black', lw=0.8, linestyle='--')
+        plt.title("Fator Temporal Tucker - Padrões de Migração ao Longo do Tempo")
+        plt.xlabel("Ano")
+        plt.ylabel("Peso do Componente")
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        filename = "tucker_fator_temporal.png"
+        plt.savefig(os.path.join(self.output_path, filename), dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f"Gráfico salvo: {filename}")
+
+    def plot_fator_espacial(self, fatores):
+        """Plota os padrões espaciais extraidos pela decomposição Tucker."""
+        fator = np.array(fatores[1])  # [n_estados, n_componentes]
+        n_comp = fator.shape[1]
+        x = np.arange(len(self.estados))
+        largura = 0.8 / n_comp
+
+        plt.figure(figsize=(14, 6))
+        for k in range(n_comp):
+            plt.bar(x + k * largura, fator[:, k], largura, label=f"Componente {k+1}", alpha=0.8)
+        plt.axhline(0, color='black', lw=0.8, linestyle='--')
+        plt.xticks(x + largura * (n_comp - 1) / 2, self.estados)
+        plt.title("Fator Espacial Tucker - Peso Migratório por Estado")
+        plt.ylabel("Peso do Componente")
+        plt.legend()
+        plt.grid(axis='y', alpha=0.3)
+        filename = "tucker_fator_espacial.png"
+        plt.savefig(os.path.join(self.output_path, filename), dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f"Gráfico salvo: {filename}")
+
+    def plot_perfil_etario_recuperado(self, nucleo, fatores):
+        """Abordagem 2: projeta de volta ao espaço etário colapsando tempo e espaço."""
+        nucleo_np = np.array(nucleo)
+        u_t = np.array(fatores[0])  # [n_anos, n_t]
+        u_s = np.array(fatores[1])  # [n_estados, n_s]
+        u_e = np.array(fatores[2])  # [n_idades, n_e]
+        rogers_castro = np.array(self.sim.phi_idade)
+
+        # Média dos fatores temporal e espacial
+        u_t_medio = u_t.mean(axis=0)  # [n_t]
+        u_s_medio = u_s.mean(axis=0)  # [n_s]
+
+        # Perfil etário: G_ijk * u_t_i * u_s_j -> coeficientes por componente etário k
+        coef_e = np.einsum('ijk,i,j->k', nucleo_np, u_t_medio, u_s_medio)  # [n_e]
+        perfil_recuperado = u_e @ coef_e  # [n_idades]
+
+        # Normaliza para mesma escala do Rogers-Castro
+        perfil_recuperado /= np.abs(perfil_recuperado).max()
+        rogers_norm = rogers_castro / rogers_castro.max()
+
+        idades = np.arange(self.sim.n_idade)
+        plt.figure(figsize=(12, 5))
+        plt.plot(idades, rogers_norm, color='darkred', lw=2, label='Rogers-Castro (original)')
+        plt.plot(idades, perfil_recuperado, color='steelblue', lw=2, linestyle='--', label='Perfil Recuperado (Tucker)')
+        plt.axhline(0, color='black', lw=0.8, linestyle=':')
+        plt.title("Perfil Etário: Rogers-Castro vs Recuperado pela Decomposição Tucker")
+        plt.xlabel("Idade")
+        plt.ylabel("Intensidade Migratória (normalizada)")
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        filename = "tucker_perfil_etario_recuperado.png"
+        plt.savefig(os.path.join(self.output_path, filename), dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f"Gráfico salvo: {filename}")
+
+    def tabela_qualidade_reconstrucao(self, nucleo, fatores, residuo_original, std):
+        """Gera tabela [Ano x Estado] com MAE e correlação entre original e reconstruído."""
+        reconstruido = np.array(tucker_to_tensor((nucleo, fatores))) * np.array(std)  # [Ano, Estado, Idade]
+        original = np.array(residuo_original)
+
+        orig_2d = original.sum(axis=2)   # [Ano, Estado]
+        recon_2d = reconstruido.sum(axis=2)
+
+        rows = []
+        for t, ano in enumerate(self.anos):
+            for s, estado in enumerate(self.estados):
+                o, r = orig_2d[t, s], recon_2d[t, s]
+                rows.append({'Ano': ano, 'Estado': estado, 'Original': o, 'Reconstruido': r,
+                             'MAE': abs(o - r), 'Erro_Relativo': abs(o - r) / (abs(o) + 1e-8)})
+
+        df = pd.DataFrame(rows)
+
+        # Correlação por estado (série temporal)
+        corr_est = {est: np.corrcoef(df[df.Estado==est].Original, df[df.Estado==est].Reconstruido)[0,1]
+                    for est in self.estados}
+        df['Correlacao_Estado'] = df['Estado'].map(corr_est)
+
+        filename = "qualidade_reconstrucao_tucker.csv"
+        df.to_csv(os.path.join(self.output_path, filename), index=False, float_format='%.2f')
+        print(f"\nTabela salva: {filename}")
+        print(df.groupby('Estado')[['MAE', 'Erro_Relativo', 'Correlacao_Estado']].mean().round(4).to_string())
+        return df
+
+    def plot_residuo_reconstruido(self, nucleo, fatores, residuo_original, std):
+        """Abordagem 3: compara o resíduo original com o reconstruido pela Tucker."""
+        reconstruido = np.array(tucker_to_tensor((nucleo, fatores))) * np.array(std)
+        original = np.array(residuo_original)
+
+        # Agrega por idade para visualizar [Ano, Estado]
+        orig_2d = original.sum(axis=2).T    # [Estado, Ano]
+        recon_2d = reconstruido.sum(axis=2).T
+
+        fig, axes = plt.subplots(1, 2, figsize=(18, 7))
+
+        vmax = np.abs(orig_2d).max()
+        sns.heatmap(orig_2d, ax=axes[0], xticklabels=self.anos, yticklabels=self.estados,
+                    cmap='RdBu', center=0, vmin=-vmax, vmax=vmax,
+                    cbar_kws={'label': 'Resíduo'})
+        axes[0].set_title("Resíduo Original (com ruído)")
+        axes[0].set_xlabel("Ano")
+
+        sns.heatmap(recon_2d, ax=axes[1], xticklabels=self.anos, yticklabels=self.estados,
+                    cmap='RdBu', center=0, vmin=-vmax, vmax=vmax,
+                    cbar_kws={'label': 'Resíduo'})
+        axes[1].set_title("Resíduo Reconstruido pela Tucker")
+        axes[1].set_xlabel("Ano")
+
+        plt.tight_layout()
+        filename = "tucker_residuo_reconstruido.png"
+        plt.savefig(os.path.join(self.output_path, filename), dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f"Gráfico salvo: {filename}")
+        """Plota os padrões etários extraidos pela decomposição Tucker e compara com Rogers-Castro."""
+        fator = np.array(fatores[2])  # [n_idades, n_componentes]
+        idades = np.arange(self.sim.n_idade)
+        rogers_castro = np.array(self.sim.phi_idade)
+
+        fig, axes = plt.subplots(1, 2, figsize=(16, 5))
+
+        # Componentes extraidos
+        for k in range(fator.shape[1]):
+            axes[0].plot(idades, fator[:, k], alpha=0.7, label=f"Componente {k+1}")
+        axes[0].axhline(0, color='black', lw=0.8, linestyle='--')
+        axes[0].set_title("Fator Etário Tucker - Componentes Extraidos")
+        axes[0].set_xlabel("Idade")
+        axes[0].set_ylabel("Peso do Componente")
+        axes[0].legend(fontsize=8)
+        axes[0].grid(True, alpha=0.3)
+
+        # Rogers-Castro original (referência)
+        axes[1].plot(idades, rogers_castro, color='darkred', lw=2, label="Rogers-Castro (original)")
+        axes[1].set_title("Perfil Etário Rogers-Castro (Referência)")
+        axes[1].set_xlabel("Idade")
+        axes[1].set_ylabel("Intensidade Migratória")
+        axes[1].legend()
+        axes[1].grid(True, alpha=0.3)
+
+        plt.tight_layout()
+        filename = "tucker_fator_etario.png"
+        plt.savefig(os.path.join(self.output_path, filename), dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f"Gráfico salvo: {filename}")
+
 
 
 if __name__ == "__main__":
@@ -538,20 +783,33 @@ if __name__ == "__main__":
     sim = SimuladorTriadeDelta()
     sim.simular()
     residuo_tensor = sim.calcular_residuo()
-    residuo_tensor_ruidoso = sim.aplicar_ruido(residuo_tensor, intensidade=0.9)
-    pesos_migracao, fatores_migracao = sim.decompor_padroes(residuo_tensor_ruidoso, rank=3)
+    residuo_tensor_ruidoso = sim.aplicar_ruido(residuo_tensor, intensidade=0.1)
+    nucleo_migracao, fatores_migracao, std_migracao = sim.decompor_padroes(residuo_tensor_ruidoso)
     print(f"Tensor de Resíduo Migratório gerado: {residuo_tensor_ruidoso.shape}")
 
     #visualização
     viz = VisualizadorTriadeDelta(sim, residuo_tensor_ruidoso, output_path="graficos_artigo")
 
     # Gerar pirâmide da região x no ano y
-    viz.plot_piramide(2000, "A")
-    # Comparar 3 estados
-    viz.plot_evolucao_temporal(["A", "A1", "A2"])
-    # Ver a variação de um estado
-    viz.plot_variacao_etaria("A")
-    # Gerar o mapa de calor completo
-    viz.plot_assinatura_migratoria()
-    # Fluxo bruo de migração do estado x no ano y com todas as idades
-    viz.plot_fluxos_brutos(2010, 'A')
+    # viz.plot_piramide(2000, "A")
+    # # Comparar 3 estados
+    # viz.plot_evolucao_temporal(["A", "A1", "A2"])
+    # # Ver a variação de um estado
+    # viz.plot_variacao_etaria("A")
+    # # Gerar o mapa de calor completo
+    # viz.plot_assinatura_migratoria()
+    # # Fluxo bruo de migração do estado x no ano y com todas as idades
+    # viz.plot_fluxos_brutos(2010, 'A')
+
+    # Comparação Real vs Controle por dimensão
+    viz.plot_comparacao_espacial()
+    viz.plot_comparacao_etaria()
+    viz.plot_comparacao_paridade()
+
+    # Análise da decomposição Tucker
+    # viz.plot_fator_temporal(fatores_migracao)
+    # viz.plot_fator_espacial(fatores_migracao)
+    # # viz.plot_fator_etario(fatores_migracao)
+    # viz.plot_perfil_etario_recuperado(nucleo_migracao, fatores_migracao)
+    viz.plot_residuo_reconstruido(nucleo_migracao, fatores_migracao, residuo_tensor_ruidoso, std_migracao)
+    viz.tabela_qualidade_reconstrucao(nucleo_migracao, fatores_migracao, residuo_tensor_ruidoso, std_migracao)

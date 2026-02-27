@@ -86,6 +86,8 @@ A dinâmica das coortes segue o princípio de que a cada período de tempo, os i
 
 No caso da população feminina, a estrutura de coortes é estendida pela incorporação da dimensão de ordem de paridade. Nela, cada coorte etária feminina é subdividida segundo o número de filhos já tidos, permitindo que as transições de fecundidade sejam modeladas como transições entre estados. Essa abordagem possibilita representar de forma mais realista a dinâmica reprodutiva, bem como suas interações com os fluxos migratórios, especialmente nas idades férteis.
 
+Além disso, a taxa de fecundidade não é tratada como constante ao longo do tempo. O modelo incorpora uma transição demográfica inspirada na trajetória observada no Brasil: nas décadas próximas a 1990, as mulheres tinham, em média, um número significativamente maior de filhos do que nas décadas seguintes. Essa queda progressiva da fecundidade é modelada por um decaimento exponencial da taxa ao longo dos anos simulados, de modo que a probabilidade de uma mulher em idade fértil ter um filho em determinado ano é maior no início da simulação e decresce continuamente até atingir um valor mínimo ao final do período.
+
 Sendo assim, matematicamente, a população masculina pode ser descrita através do produto entre o número de homens presentes em uma região e a probabilidade de sobrevivência daquele grupo, somados ao saldo migratório de quem sair de determinado estado e de quem chegou nesse mesmo estado em questão.
 
 $$M(t+1, r, i+1) = M(t, r, i) \cdot S_M(t, r, i) + \text{Mig}_M^{liq}(t, r, i)$$
